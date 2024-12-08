@@ -14,6 +14,14 @@ for row_num, row in enumerate(input_grid):
                 antenna_row_cols[val] = []
             antenna_row_cols[val].append((row_num, col_num))
 
+def calc_pos(a, diff, i):
+    # return a + i * diff
+    return (a[0] + i * diff[0], a[1] + i * diff[1])
+
+
+def in_bounds(p):
+    return 0 <= p[0] < num_rows and 0 <= p[1] < num_cols
+
 antinode_row_cols = set()
 for sender, row_cols in antenna_row_cols.items():
     for a_row_col in row_cols:
@@ -22,9 +30,16 @@ for sender, row_cols in antenna_row_cols.items():
                 continue
             # a + (a - b) = 2a - b
             new_row_col = (2 * a_row_col[0] - b_row_col[0], 2 * a_row_col[1] - b_row_col[1])
-            print(a_row_col, b_row_col, "->", new_row_col)
-            if 0 <= new_row_col[0] < num_rows and 0 <= new_row_col[1] < num_cols:
-                antinode_row_cols.add(new_row_col)
+            diff = (a_row_col[0] - b_row_col[0], a_row_col[1] - b_row_col[1])
+
+            i = 0
+            while in_bounds(calc_pos(a_row_col, diff, i)):
+                antinode_row_cols.add(calc_pos(a_row_col, diff, i))
+                i += 1
+            i = -1
+            while in_bounds(calc_pos(a_row_col, diff, i)):
+                antinode_row_cols.add(calc_pos(a_row_col, diff, i))
+                i -= 1
 
 for row_num, row in enumerate(input_grid):
     for col_num, val in enumerate(row):
