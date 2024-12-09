@@ -4,7 +4,7 @@ from typing import List, Optional
 
 @dataclasses.dataclass
 class DiskBlock:
-    id: int
+    id: Optional[int]
     start: int
     length: int
 
@@ -13,8 +13,9 @@ class DiskBlock:
         return sum(self.start + i for i in range(self.length)) * self.id
 
 disk_blocks: List[DiskBlock] = []
+disk_spaces: List[DiskBlock] = []
 
-with open("small_input", "rt") as input_file:
+with open("input", "rt") as input_file:
     empty = False
     id = 0
     pos = 0
@@ -22,7 +23,9 @@ with open("small_input", "rt") as input_file:
         if size == "\n":
             continue
         size = int(size)
-        if not empty:
+        if empty:
+            disk_spaces.append(DiskBlock(start=pos, length=size, id=None))
+        else:
             disk_blocks.append(DiskBlock(start=pos, length=size, id=id))
         pos += size
         if not empty:
@@ -35,29 +38,15 @@ print(disk_blocks)
 
 
 checksum = 0
-left_block_id = 0
-while left_block_id < len(disk_blocks):
-    block = disk_blocks[left_block_id]
-    # just take file as-is
-    print(block)
-    checksum += block.checksum()
-    # no next block available
-    if left_block_id == len(disk_blocks) - 1:
-        break
-    # need to take from the end, skip empty files
-    next_block = disk_blocks[left_block_id + 1]
-    block_start = block.start
-    next_free_start = block.start + block.length
-    for right_block_id, other_block in reversed(list(enumerate(disk_blocks[left_block_id + 1:], start=left_block_id + 1))):
-        space = next_block.start - next_free_start
-        if other_block.length <= space:
-            # take this one
-            other_block.start = next_free_start
-            checksum += other_block.checksum()
-            print(other_block)
-            del disk_blocks[right_block_id]
-            # there could be another, so don't directly break. but because they always grow smaller, we don't
-            # need to look at the full list again
-            next_free_start += other_block.length
-    left_block_id += 1
+for move_file in reversed(list(disk_blocks)):
+    # find space to move file to the right.
+    # if it doesn't exist, don't move the file.
+    space = next((space for space in disk_spaces if space.length >= move_file.length and space.start < move_file.start), None)
+    if space is not None:  # found a space
+        move_file.start = space.start
+        space.start += move_file.length
+        space.length -= move_file.length
+    print(move_file)
+    checksum += move_file.checksum()
+
 print(checksum)
