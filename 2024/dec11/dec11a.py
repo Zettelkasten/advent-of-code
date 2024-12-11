@@ -1,7 +1,7 @@
 with open("input", "rt") as input_file:
     input = [int(val) for val in input_file.read().split()]
 
-for round in range(25):
+for round in range(1, 26):
     next_input = []
     for stone in input:
         str_stone = str(stone)
@@ -13,7 +13,9 @@ for round in range(25):
             next_input.append(int(str_stone[half_len:]))
         else:
             next_input.append(stone * 2024)
-    print(input)
     input = next_input
+    print(round, len(input), input)
+    if round == 5:
+        break
 
 print(len(input))
