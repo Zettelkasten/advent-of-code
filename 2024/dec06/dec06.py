@@ -21,6 +21,8 @@ def simulation(grid, start_row, start_col, dir, count_loops: bool):
     loops_found = 0
     assert grid[start_row][start_col] == dir
 
+    dead_end = False
+
     while True:
         row_dir, col_dir = dirs_to_row_col[dir]
         start_row += row_dir
@@ -56,10 +58,22 @@ def simulation(grid, start_row, start_col, dir, count_loops: bool):
             start_col += col_dir
             new_ground = grid[start_row][start_col]
             if new_ground == "#":
-                # this should only happen if we go into an dead end because
-                # of a poorly placed obstacle.
-                # I'm not sure if that's allowed, but let's just quit then...
-                return tiles_visited, 0
+                # this should only happen if we go into an dead end.
+                # then we need to turn around!
+
+                # backtrace
+                start_row -= row_dir
+                start_col -= col_dir
+                # turn again
+                dir = dirs_list[(dirs_list.index(dir) + 1) % len(dirs_list)]
+                row_dir, col_dir = dirs_to_row_col[dir]
+
+                # move for realz
+                start_row += row_dir
+                start_col += col_dir
+                new_ground = grid[start_row][start_col]
+                assert new_ground != "#"  # now we definitely shouldn't be stuck anymore
+                dead_end = True
 
         # explicitly no "else" here ...
         if new_ground in dirs_to_row_col:
@@ -83,6 +97,8 @@ def simulation(grid, start_row, start_col, dir, count_loops: bool):
             print("\n".join("".join(row) for row in grid))
             print()
 
+    if dead_end:
+        print("ohi")
     return tiles_visited, loops_found
 
 # find start position
