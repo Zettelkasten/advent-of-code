@@ -1,3 +1,5 @@
+
+
 with open("input", "rt") as input_file:
     input = [int(val) for val in input_file.read().split()]
 
@@ -15,7 +17,3 @@ for round in range(1, 26):
             next_input.append(stone * 2024)
     input = next_input
     print(round, len(input), input)
-    if round == 5:
-        break
-
-print(len(input))
