@@ -1,3 +1,5 @@
+import math
+from typing import Set, Tuple
 
 map = {}
 height = 0
@@ -39,24 +41,20 @@ del robot_pos
 
 dir_to_x_y = {">": (1, 0), "<": (-1, 0), "^": (0, -1), "v": (0, 1)}
 
-def can_push(robot_x, robot_y, dir_x, dir_y, do_push: bool):
+def can_push(robot_x, robot_y, dir_x, dir_y, push_list: Set[Tuple[int, int]]) -> bool:
     new_x, new_y = robot_x + dir_x, robot_y + dir_y
     new_tile = map[(new_x, new_y)]
     if new_tile == ".":
-        if do_push:
-            map[(new_x, new_y)] = map[(robot_x, robot_y)]
-            map[(robot_x, robot_y)] = "."
+        push_list.add((robot_x, robot_y))
         return True
     elif new_tile == "#":
-        assert not do_push
         return False
     elif new_tile in "[]":
+        push_list.add((robot_x, robot_y))
+
         if dir_y == 0:  # horizontal
-            push_further = can_push(robot_x + dir_x, robot_y + dir_y, dir_x, dir_y, do_push=do_push)
-            if do_push:
-                assert push_further
-                map[(new_x, new_y)] = map[(robot_x, robot_y)]
-                map[(robot_x, robot_y)] = "."
+            push_further = can_push(robot_x + dir_x, robot_y + dir_y, dir_x, dir_y, push_list=push_list)
+            push_list.add((robot_x, robot_y))
             return push_further
         elif dir_x == 0:  # vertical
             if new_tile == "[":
@@ -67,38 +65,43 @@ def can_push(robot_x, robot_y, dir_x, dir_y, do_push: bool):
                 neighbor_x = -1
             else:
                 assert False, new_tile
-            push_further = can_push(robot_x + dir_x, robot_y + dir_y, dir_x, dir_y, do_push=do_push) and can_push(
-                robot_x + dir_x + neighbor_x, robot_y + dir_y, dir_x, dir_y, do_push=do_push)
-            if do_push:
-                assert push_further
-                map[(new_x, new_y)] = map[(robot_x, robot_y)]
-                map[(robot_x, robot_y)] = "."
-                map[(new_x + neighbor_x, new_y)] = map[(robot_x + neighbor_x, robot_y)]
-                map[(robot_x + neighbor_x, robot_y)] = "."
+            push_further = can_push(robot_x + dir_x, robot_y + dir_y, dir_x, dir_y, push_list=push_list) and can_push(
+                robot_x + dir_x + neighbor_x, robot_y + dir_y, dir_x, dir_y, push_list=push_list)
             return push_further
     else:
         assert False
 
-for movement in movements:
-    # print the map
+def print_map():
     for y in range(height):
         for x in range(width):
             print(map[(x, y)] if (x, y) != (robot_x, robot_y) else "@", end="")
         print()
     print("=" * 100)
-    print("Want to push", movement)
+
+for step, movement in enumerate(movements):
+    # print the map
+    print_map()
+    print("Want to push", movement, "in step", step)
     print()
 
     # attempt to push
     dir_x, dir_y = dir_to_x_y[movement]
 
-    if can_push(robot_x, robot_y, dir_x, dir_y, do_push=False):
-        print("can push")
-        can_push(robot_x, robot_y, dir_x, dir_y, do_push=True)
+    push_list = set()
+    if can_push(robot_x, robot_y, dir_x, dir_y, push_list=push_list):
+        print("can push:", push_list)
+
+        # push all!
+        for robot_x, robot_y in sorted(push_list, key=lambda p: abs(p[0] - robot_x) + abs(p[1] - robot_y), reverse=True):
+            new_x, new_y = robot_x + dir_x, robot_y + dir_y
+            map[(new_x, new_y)] = map[(robot_x, robot_y)]
+            map[(robot_x, robot_y)] = "."
+
         robot_x += dir_x
         robot_y += dir_y
     else:
         print("cannot push")
 
+print_map()
 
 print(sum(100 * y + x for (x, y), val in map.items() if val == "["))
