@@ -128,11 +128,10 @@ def do_search(target_d_outputs: str) -> Tile:
             if next_tile not in visited_tiles and next_tile not in explore_tiles_to_cost:
                 explore_tiles_to_cost.append(next_tile)
 
-output = 0
-
-with open("example_input", "rt") as input_file:
+with open("input", "rt") as input_file:
     target_codes = [c.strip() for c in input_file.readlines()]
 
+output = 0
 for target_code in target_codes:
     result = do_search(target_code)
     print(result, len(result.a_key_pressed_list))
@@ -160,6 +159,8 @@ def path_on_pad(from_x, from_y, to_x, to_y, valid_pos) -> Iterable[str]:
                 continue
             if norm(next_x, next_y, to_x, to_y) < norm(from_x, from_y, to_x, to_y):
                 yield from (dir + cont_path for cont_path in path_on_pad(next_x, next_y, to_x, to_y, valid_pos=valid_pos))
+
+distance_cache = {}
 
 
 def distance(from_vector: str, to_vector: str) -> int:
@@ -196,6 +197,12 @@ def distance(from_vector: str, to_vector: str) -> int:
     orig_to_char = to_vector[leading_a_count]
     from_x, from_y = keys_to_pos[orig_from_char]
     to_x, to_y = keys_to_pos[orig_to_char]
+
+    # the output of this function only depends on this key:
+    cache_key = (leading_a_count, orig_from_char, orig_to_char)
+    # so we can cache it.
+    if cache_key in distance_cache:
+        return distance_cache[cache_key]
 
     path_distances = {}
     for possible_path in path_on_pad(from_x, from_y, to_x, to_y, valid_pos=pos_to_keys.keys()):
@@ -237,12 +244,19 @@ def distance(from_vector: str, to_vector: str) -> int:
         path_distances[possible_path] = possible_path_distance
 
     # take the shortest
-    return min(path_distances.values())
+    shortest_distance = min(path_distances.values())
+
+    # and cache it
+    distance_cache[cache_key] = shortest_distance
+    return shortest_distance
 
 def dist_for_code(num_robot_pads, target_code):
     codes = ["A" * num_robot_pads + c for c in "A" + target_code]
     # to go to the next code, and + 1 to actually print it.
     return sum(distance(a, b) + 1 for a, b in zip(codes[:-1], codes[1:]))
 
-# to press 3:
-print(dist_for_code(2, "379A"))
+output = 0
+for target_code in target_codes:
+    result = dist_for_code(25, target_code)
+    output += int(target_code.replace("A", "")) * result
+print(output)
