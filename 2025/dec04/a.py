@@ -12,7 +12,7 @@ can_remove = (x.bool() & (out < 4))
 removed_total = 0
 while can_remove.any():
     removed_total += can_remove.sum()
-    print("Removed total:", removed_total.item())
+    print("Removedb2a2b17c9224da2d63e3f83e3f0bfa8f5531be12 total:", removed_total.item())
     x &= ~can_remove
     out = conv2d(x[None, None, :, :].double(), kernel[None, None, :, :], padding="same").squeeze([0, 1])
     can_remove = (x.bool() & (out < 4))
